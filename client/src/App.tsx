@@ -4,6 +4,7 @@ import { ProductInput } from "./components/ProductInput.js";
 import { SearchProgress } from "./components/SearchProgress.js";
 import { FiltersBar } from "./components/FiltersBar.js";
 import { ResultCard } from "./components/ResultCard.js";
+import { StudioCinemaView } from "./components/StudioCinemaView.js";
 import { HistoryDrawer } from "./components/HistoryDrawer.js";
 import { ProviderStatusModal } from "./components/ProviderStatusModal.js";
 import { VideoDetailModal } from "./components/VideoDetailModal.js";
@@ -22,6 +23,10 @@ import {
   Check,
   TrendingUp,
   ShieldCheck,
+  Radio,
+  Eye,
+  Heart,
+  MessageCircle,
 } from "lucide-react";
 
 export default function App() {
@@ -31,14 +36,15 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Filters & View State
+  // Filters & View State (default: 'reels' wall view for full TikTok/Foreplay creative vibe)
   const [activeTab, setActiveTab] = useState<"all" | "instagram" | "meta_ad_library">("all");
   const [minScore, setMinScore] = useState<number>(0);
   const [showDuplicates, setShowDuplicates] = useState<boolean>(true);
   const [showPreviouslySeen, setShowPreviouslySeen] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [sortBy, setSortBy] = useState<"score" | "recent" | "views">("score");
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [viewMode, setViewMode] = useState<"reels" | "cinema" | "table">("reels");
+  const [selectedCinemaItem, setSelectedCinemaItem] = useState<any | null>(null);
 
   // Detail Modal & History
   const [selectedDetailItem, setSelectedDetailItem] = useState<any | null>(null);
@@ -195,6 +201,9 @@ export default function App() {
   const realMetaCount = results.filter((r) => r.source === "meta_ad_library" && !r.isMock).length;
   const mockMetaCount = results.filter((r) => r.source === "meta_ad_library" && r.isMock).length;
 
+  const currentSearchRecord = historyList.find((h) => h.id === currentSearchId);
+  const currentProductName = currentSearchRecord?.product?.name || "Sony WH-1000XM5";
+
   const avgMatchScore = useMemo(() => {
     if (results.length === 0) return 0;
     const total = results.reduce((acc, r) => acc + (r.similarityScore || 0), 0);
@@ -202,28 +211,36 @@ export default function App() {
   }, [results]);
 
   return (
-    <div className="min-h-screen bg-[#080B11] text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-[#07090e] text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white relative overflow-x-hidden">
+      {/* Cyber Grid Texture Overlay */}
+      <div className="fixed inset-0 pointer-events-none cyber-grid-bg opacity-30 z-0" />
+
+      {/* Atmospheric Ambient Glows */}
+      <div className="fixed -top-40 right-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[140px] pointer-events-none z-0" />
+      <div className="fixed top-1/3 -left-40 w-[500px] h-[500px] bg-rose-600/10 rounded-full blur-[140px] pointer-events-none z-0" />
+
       {/* Top Header */}
       <Header
         onOpenHistory={() => setHistoryOpen(true)}
         onOpenStatus={() => setStatusOpen(true)}
         providerStatus={providerStatus}
         totalSearches={historyList.length}
+        currentProduct={currentProductName}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-7">
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Error Alert */}
         {error && (
           <div className="bg-rose-950/40 border border-rose-800/80 rounded-2xl p-4 flex items-start space-x-3 text-rose-200 backdrop-blur-md shadow-lg">
             <AlertCircle className="w-5 h-5 text-rose-400 mt-0.5 flex-shrink-0" />
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider">Search Pipeline Notice</h4>
+              <h4 className="text-xs font-mono font-bold uppercase tracking-wider">Search Pipeline Notice</h4>
               <p className="text-xs text-rose-300 mt-0.5">{error}</p>
             </div>
           </div>
         )}
 
-        {/* Step 1: Product Input (Bento Box) */}
+        {/* Step 1: AI Creative Discovery Deck */}
         <ProductInput onStartSearch={handleStartSearch} isLoading={isLoading} />
 
         {/* Step 2: Search Progress Stream */}
@@ -234,77 +251,91 @@ export default function App() {
           />
         )}
 
-        {/* KPI Summary Stats Bar (Active when results exist) */}
+        {/* KPI Intelligence Strip */}
         {results.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-            <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 backdrop-blur-md shadow-lg shadow-black/20 flex flex-col justify-between">
-              <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block">
-                Total Discovered
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Total Discovered */}
+            <div className="bg-obsidian-900/90 border border-white/[0.08] rounded-2xl p-4.5 backdrop-blur-xl shadow-xl flex flex-col justify-between group hover:border-white/20 transition">
+              <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                <span>Discovered Creative</span>
+                <Radio className="w-3.5 h-3.5 text-slate-500" />
               </span>
-              <div className="flex items-baseline space-x-2 mt-1">
-                <span className="text-2xl font-black font-mono text-white tracking-tight">
+              <div className="flex items-baseline space-x-2 my-2">
+                <span className="text-3xl font-extrabold font-mono text-white tracking-tight">
                   {results.length}
                 </span>
                 <span className="text-xs text-slate-400 font-mono">candidates</span>
               </div>
-              <span className="text-[10px] text-slate-500 mt-1 block">
+              <span className="text-[10px] text-slate-400 font-mono block">
                 {realIgCount + realMetaCount} Verified Live • {mockIgCount + mockMetaCount} Fallback
               </span>
             </div>
 
-            <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 backdrop-blur-md shadow-lg shadow-black/20 flex flex-col justify-between">
-              <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider flex items-center space-x-1">
-                <Instagram className="w-3 h-3 text-pink-400" />
-                <span>Instagram Reels</span>
+            {/* Instagram Reels */}
+            <div className="bg-obsidian-900/90 border border-white/[0.08] hover:border-pink-500/40 rounded-2xl p-4.5 backdrop-blur-xl shadow-xl flex flex-col justify-between group transition">
+              <span className="text-[11px] font-mono text-pink-400 uppercase tracking-wider flex items-center justify-between">
+                <span className="flex items-center space-x-1.5">
+                  <Instagram className="w-3.5 h-3.5" />
+                  <span>Instagram Reels</span>
+                </span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-500/20">9:16</span>
               </span>
-              <div className="flex items-baseline space-x-2 mt-1">
-                <span className="text-2xl font-black font-mono text-pink-300 tracking-tight">
+              <div className="flex items-baseline space-x-2 my-2">
+                <span className="text-3xl font-extrabold font-mono text-pink-300 tracking-tight">
                   {igCount}
                 </span>
                 <span className="text-xs text-pink-400/80 font-mono">reels</span>
               </div>
-              <span className="text-[10px] text-emerald-400 mt-1 block font-mono">
-                {realIgCount} Live Organic Posts
+              <span className="text-[10px] text-emerald-400 font-mono block">
+                {realIgCount} Live Organic Posts Indexed
               </span>
             </div>
 
-            <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 backdrop-blur-md shadow-lg shadow-black/20 flex flex-col justify-between">
-              <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider flex items-center space-x-1">
-                <Layers className="w-3 h-3 text-blue-400" />
-                <span>Meta Ad Library</span>
+            {/* Meta Ad Library */}
+            <div className="bg-obsidian-900/90 border border-white/[0.08] hover:border-blue-500/40 rounded-2xl p-4.5 backdrop-blur-xl shadow-xl flex flex-col justify-between group transition">
+              <span className="text-[11px] font-mono text-blue-400 uppercase tracking-wider flex items-center justify-between">
+                <span className="flex items-center space-x-1.5">
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Meta Ad Library</span>
+                </span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">ADS</span>
               </span>
-              <div className="flex items-baseline space-x-2 mt-1">
-                <span className="text-2xl font-black font-mono text-blue-300 tracking-tight">
+              <div className="flex items-baseline space-x-2 my-2">
+                <span className="text-3xl font-extrabold font-mono text-blue-300 tracking-tight">
                   {metaCount}
                 </span>
-                <span className="text-xs text-blue-400/80 font-mono">ads</span>
+                <span className="text-xs text-blue-400/80 font-mono">commercial ads</span>
               </div>
-              <span className="text-[10px] text-emerald-400 mt-1 block font-mono">
-                {realMetaCount} Commercial Video Ads
+              <span className="text-[10px] text-emerald-400 font-mono block">
+                {realMetaCount} Commercial Campaigns Active
               </span>
             </div>
 
-            <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 backdrop-blur-md shadow-lg shadow-black/20 flex flex-col justify-between">
-              <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider flex items-center space-x-1">
-                <Sparkles className="w-3 h-3 text-indigo-400" />
-                <span>AI Confidence Mean</span>
+            {/* AI Confidence Mean */}
+            <div className="bg-obsidian-900/90 border border-white/[0.08] hover:border-indigo-500/40 rounded-2xl p-4.5 backdrop-blur-xl shadow-xl flex flex-col justify-between group transition">
+              <span className="text-[11px] font-mono text-indigo-400 uppercase tracking-wider flex items-center justify-between">
+                <span className="flex items-center space-x-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>AI Relevance Mean</span>
+                </span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">SCORE</span>
               </span>
-              <div className="flex items-baseline space-x-2 mt-1">
-                <span className="text-2xl font-black font-mono text-indigo-300 tracking-tight">
+              <div className="flex items-baseline space-x-2 my-2">
+                <span className="text-3xl font-extrabold font-mono text-indigo-300 tracking-tight">
                   {avgMatchScore}%
                 </span>
-                <span className="text-xs text-indigo-400/80 font-mono">match</span>
+                <span className="text-xs text-indigo-400/80 font-mono">confidence</span>
               </div>
-              <span className="text-[10px] text-slate-400 mt-1 block">
-                Visual & Semantic Weighted
+              <span className="text-[10px] text-slate-400 font-mono block">
+                Weighted Brand & SKU Model Overlap
               </span>
             </div>
           </div>
         )}
 
-        {/* Step 3: Interactive Filters Bar & Results Layout */}
+        {/* Step 3: Interactive Filter Dock & Creative Presentations */}
         {results.length > 0 && (
-          <div className="space-y-5">
+          <div className="space-y-6">
             <FiltersBar
               activeTab={activeTab}
               onTabChange={setActiveTab}
@@ -331,15 +362,15 @@ export default function App() {
               }}
             />
 
-            {/* Results Presentation (Grid or Table) */}
+            {/* View State Rendering */}
             {filteredResults.length === 0 ? (
-              <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-12 text-center backdrop-blur-md shadow-xl">
-                <Inbox className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-                <h3 className="text-sm font-bold text-slate-200">No candidates match active criteria</h3>
-                <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto leading-relaxed">
+              <div className="bg-obsidian-900/90 border border-white/[0.08] rounded-3xl p-12 text-center backdrop-blur-xl shadow-2xl">
+                <Inbox className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                <h3 className="text-sm font-bold text-white">No candidates match active filter parameters</h3>
+                <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto leading-relaxed font-mono">
                   {results.length > 0
-                    ? `You have ${results.length} discovered items (${igCount} Instagram Reels, ${metaCount} Meta Ads). Clear the text search or lower the match score threshold to view them.`
-                    : "No results discovered."}
+                    ? `You have ${results.length} discovered items (${igCount} Reels, ${metaCount} Ads). Clear the search query or lower the confidence filter.`
+                    : "No candidates discovered."}
                 </p>
                 {results.length > 0 && (
                   <button
@@ -350,14 +381,22 @@ export default function App() {
                       setShowPreviouslySeen(true);
                       setActiveTab("all");
                     }}
-                    className="mt-4 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition shadow-lg shadow-indigo-600/20 active:scale-95"
+                    className="mt-4 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition shadow-lg shadow-indigo-600/30 active:scale-95"
                   >
-                    Reset All Filters ({results.length} Videos Available)
+                    Reset Filters ({results.length} Videos Available)
                   </button>
                 )}
               </div>
-            ) : viewMode === "grid" ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            ) : viewMode === "cinema" ? (
+              /* Studio Cinema Theater Split View */
+              <StudioCinemaView
+                items={filteredResults}
+                selectedItem={selectedCinemaItem || filteredResults[0]}
+                onSelectItem={(item) => setSelectedCinemaItem(item)}
+              />
+            ) : viewMode === "reels" ? (
+              /* 9:16 Vertical Video Reels Wall (Creative Center style) */
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
                 {filteredResults.map((item) => (
                   <ResultCard
                     key={item.id}
@@ -367,28 +406,37 @@ export default function App() {
                 ))}
               </div>
             ) : (
-              /* Compact Data Table View */
-              <div className="bg-slate-900/90 border border-slate-800/80 rounded-2xl overflow-hidden backdrop-blur-md shadow-xl">
+              /* Data Matrix Table View */
+              <div className="bg-obsidian-900/90 border border-white/[0.08] rounded-3xl overflow-hidden backdrop-blur-xl shadow-2xl">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs text-slate-300">
-                    <thead className="bg-slate-950/80 text-[11px] font-mono uppercase text-slate-400 border-b border-slate-800">
+                    <thead className="bg-black/60 text-[11px] font-mono uppercase text-slate-400 border-b border-white/[0.08]">
                       <tr>
-                        <th className="px-4 py-3">Channel</th>
-                        <th className="px-4 py-3">Creator / Page</th>
-                        <th className="px-4 py-3">Caption & Content</th>
-                        <th className="px-4 py-3">AI Match</th>
-                        <th className="px-4 py-3">Evidence</th>
-                        <th className="px-4 py-3">Status</th>
-                        <th className="px-4 py-3 text-right">Actions</th>
+                        <th className="px-5 py-3.5">Video Preview</th>
+                        <th className="px-5 py-3.5">Channel</th>
+                        <th className="px-5 py-3.5">Creator / Page</th>
+                        <th className="px-5 py-3.5">Caption & Content</th>
+                        <th className="px-5 py-3.5">AI Confidence</th>
+                        <th className="px-5 py-3.5">Status</th>
+                        <th className="px-5 py-3.5 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60 font-sans">
+                    <tbody className="divide-y divide-white/[0.06] font-sans">
                       {filteredResults.map((item) => {
                         const isIg = item.source === "instagram";
                         const score = Math.round((item.similarityScore || 0) * 100);
                         return (
-                          <tr key={item.id} className="hover:bg-slate-800/40 transition">
-                            <td className="px-4 py-3 whitespace-nowrap">
+                          <tr key={item.id} className="hover:bg-white/[0.03] transition">
+                            <td className="px-5 py-3">
+                              <div className="w-14 aspect-[9/16] rounded-lg overflow-hidden bg-black border border-white/10 relative">
+                                <img
+                                  src={item.thumbnailUrl}
+                                  alt={item.advertiserName}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            </td>
+                            <td className="px-5 py-3 whitespace-nowrap">
                               <span className="inline-flex items-center space-x-1.5 font-semibold text-xs">
                                 {isIg ? (
                                   <>
@@ -403,43 +451,40 @@ export default function App() {
                                 )}
                               </span>
                             </td>
-                            <td className="px-4 py-3 font-semibold text-white whitespace-nowrap max-w-[140px] truncate">
+                            <td className="px-5 py-3 font-semibold text-white whitespace-nowrap max-w-[150px] truncate">
                               {item.advertiserName || "Anonymous"}
                             </td>
-                            <td className="px-4 py-3 max-w-sm truncate text-slate-300" title={item.captionOrAdText}>
+                            <td className="px-5 py-3 max-w-sm truncate text-slate-300" title={item.captionOrAdText}>
                               {item.captionOrAdText || "—"}
                             </td>
-                            <td className="px-4 py-3 font-mono font-bold whitespace-nowrap">
+                            <td className="px-5 py-3 font-mono font-bold whitespace-nowrap">
                               <span
                                 className={
-                                  score >= 75
+                                  score >= 80
                                     ? "text-emerald-400"
-                                    : score >= 60
-                                    ? "text-indigo-400"
-                                    : "text-amber-400"
+                                    : score >= 50
+                                    ? "text-cyan-400"
+                                    : "text-indigo-400"
                                 }
                               >
                                 {score}%
                               </span>
                             </td>
-                            <td className="px-4 py-3 font-mono capitalize text-[11px] text-slate-400 whitespace-nowrap">
-                              {item.evidenceType}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
+                            <td className="px-5 py-3 whitespace-nowrap">
                               <span
                                 className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
                                   item.isMock
-                                    ? "bg-amber-950/80 text-amber-300 border-amber-800"
-                                    : "bg-emerald-950/80 text-emerald-300 border-emerald-800"
+                                    ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                                    : "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
                                 }`}
                               >
-                                {item.isMock ? "Mock" : "Live API"}
+                                {item.isMock ? "Mock Fallback" : "Live API"}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-right whitespace-nowrap space-x-2">
+                            <td className="px-5 py-3 text-right whitespace-nowrap space-x-2">
                               <button
                                 onClick={() => setSelectedDetailItem(item)}
-                                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition"
+                                className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-medium border border-white/10 transition"
                               >
                                 Inspect
                               </button>
@@ -447,9 +492,9 @@ export default function App() {
                                 href={item.permalink}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-indigo-600/80 hover:bg-indigo-600 text-white text-xs font-medium transition"
+                                className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition"
                               >
-                                <span>Open</span>
+                                <span>Source</span>
                                 <ExternalLink className="w-3 h-3" />
                               </a>
                             </td>
@@ -463,43 +508,43 @@ export default function App() {
             )}
           </div>
         )}
-
-        {/* Empty State when no search has been started */}
-        {!searchProgress && results.length === 0 && (
-          <div className="bg-slate-900/40 border border-dashed border-slate-800/80 rounded-2xl p-16 text-center backdrop-blur-sm">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-900/60 to-purple-900/60 border border-indigo-700/40 flex items-center justify-center text-indigo-400 mx-auto mb-4 shadow-xl">
-              <Film className="w-7 h-7" />
-            </div>
-            <h3 className="text-base font-bold text-white tracking-tight">
-              Ready for Video Discovery
-            </h3>
-            <p className="text-xs text-slate-400 mt-2 max-w-md mx-auto leading-relaxed">
-              Select one of the sample presets above (e.g. <strong className="text-slate-200">Sony XM5</strong> or <strong className="text-slate-200">boAt Earbuds</strong>) or enter your own product to discover high-resolution Instagram Reels and Meta video ads.
-            </p>
-          </div>
-        )}
       </main>
 
-      {/* Video Detail Inspector Modal */}
-      <VideoDetailModal
-        item={selectedDetailItem}
-        onClose={() => setSelectedDetailItem(null)}
-      />
-
-      {/* History Drawer */}
-      <HistoryDrawer
-        isOpen={historyOpen}
-        onClose={() => setHistoryOpen(false)}
-        history={historyList}
-        onSelectSearch={handleSelectHistorySearch}
-      />
+      {/* Video Detail Theater Modal */}
+      {selectedDetailItem && (
+        <VideoDetailModal
+          item={selectedDetailItem}
+          onClose={() => setSelectedDetailItem(null)}
+        />
+      )}
 
       {/* Provider Status Modal */}
-      <ProviderStatusModal
-        isOpen={statusOpen}
-        onClose={() => setStatusOpen(false)}
-        statusData={providerStatus}
-      />
+      {statusOpen && (
+        <ProviderStatusModal
+          isOpen={statusOpen}
+          onClose={() => setStatusOpen(false)}
+          providerStatus={providerStatus}
+          onRefresh={() => {
+            fetch("/api/providers/status")
+              .then((res) => res.json())
+              .then((data) => setProviderStatus(data));
+          }}
+        />
+      )}
+
+      {/* Search History Drawer */}
+      {historyOpen && (
+        <HistoryDrawer
+          isOpen={historyOpen}
+          onClose={() => setHistoryOpen(false)}
+          historyList={historyList}
+          currentSearchId={currentSearchId}
+          onSelectSearch={(id) => {
+            handleSelectHistorySearch(id);
+            setHistoryOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React from "react";
-import { Instagram, Layers, CheckCircle2, AlertTriangle, RefreshCw, Zap } from "lucide-react";
+import { Instagram, Layers, CheckCircle2, AlertTriangle, RefreshCw, Zap, ShieldCheck } from "lucide-react";
 
 interface SearchProgressProps {
   progress: any;
@@ -15,18 +15,18 @@ export const SearchProgress: React.FC<SearchProgressProps> = ({ progress, onRetr
   const isRunning = progress.status === "running";
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-5 shadow-xl shadow-black/20 backdrop-blur-md transition-all">
-      <div className="flex items-center justify-between pb-3.5 border-b border-slate-800/80">
+    <div className="bg-obsidian-900/90 border border-white/[0.08] rounded-3xl p-5 sm:p-6 backdrop-blur-2xl shadow-2xl transition-all">
+      <div className="flex items-center justify-between pb-4 border-b border-white/[0.06]">
         <div className="flex items-center space-x-2.5">
-          <span className="flex h-2 w-2 rounded-full bg-emerald-500"></span>
-          <span className="text-xs font-bold text-slate-200 uppercase tracking-widest">
-            2. Live Discovery Pipeline Stream
+          <span className="flex h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
+          <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">
+            Live Dual-Source Pipeline Monitor
           </span>
           <span
-            className={`text-[10px] font-mono px-2.5 py-0.5 rounded-full flex items-center space-x-1.5 border font-medium ${
+            className={`text-[10px] font-mono px-2.5 py-0.5 rounded-full flex items-center space-x-1.5 border font-semibold ${
               isRunning
-                ? "bg-amber-500/10 text-amber-400 border-amber-500/30 shadow-sm"
-                : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-sm"
+                ? "bg-amber-500/15 text-amber-300 border-amber-500/40 animate-pulse"
+                : "bg-emerald-500/15 text-emerald-300 border-emerald-500/40"
             }`}
           >
             {isRunning ? (
@@ -37,7 +37,7 @@ export const SearchProgress: React.FC<SearchProgressProps> = ({ progress, onRetr
             ) : (
               <>
                 <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                <span>Collection Complete</span>
+                <span>Dual Engine Finished</span>
               </>
             )}
           </span>
@@ -46,7 +46,7 @@ export const SearchProgress: React.FC<SearchProgressProps> = ({ progress, onRetr
         {isCompleted && onRetry && (
           <button
             onClick={onRetry}
-            className="text-xs flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 transition shadow-sm font-medium"
+            className="text-xs flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition font-mono"
           >
             <RefreshCw className="w-3 h-3 text-indigo-400" />
             <span>Re-evaluate</span>
@@ -56,94 +56,86 @@ export const SearchProgress: React.FC<SearchProgressProps> = ({ progress, onRetr
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
         {/* Instagram Reels Channel Card */}
-        <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 shadow-inner relative overflow-hidden group">
+        <div className="bg-black/40 border border-white/10 rounded-2xl p-4.5 relative overflow-hidden">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 flex items-center justify-center text-white shadow-md">
+            <div className="flex items-center space-x-2">
+              <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 flex items-center justify-center text-white shadow-md">
                 <Instagram className="w-4 h-4" />
               </div>
-              <div>
-                <h3 className="text-xs font-bold text-white tracking-wide">Instagram Reels</h3>
-                <span className="text-[10px] text-slate-400 font-mono">Apify Live Search Actor</span>
-              </div>
+              <span className="text-xs font-bold text-white">Instagram Reels Stream</span>
             </div>
-
-            <div className="text-right font-mono">
-              <span className="text-sm font-bold text-white">
-                {ig.discovered} <span className="text-slate-500 font-normal">/ {ig.target || 20}</span>
-              </span>
-              <span className="text-[9px] text-slate-500 block uppercase tracking-wider">Target Quota</span>
-            </div>
+            <span className="text-[11px] font-mono text-pink-400 font-bold">
+              {ig.usable} / {ig.target} Usable
+            </span>
           </div>
 
-          {/* Progress bar */}
-          <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden mb-3.5 p-0.5 border border-slate-800/80">
+          <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden mb-3">
             <div
-              className="bg-gradient-to-r from-rose-500 via-pink-500 to-purple-600 h-full rounded-full transition-all duration-500 shadow"
-              style={{ width: `${Math.min(100, ((ig.discovered || 0) / (ig.target || 20)) * 100)}%` }}
+              className="h-full bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 rounded-full transition-all duration-300"
+              style={{ width: `${Math.min(100, (ig.usable / (ig.target || 1)) * 100)}%` }}
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-2 pt-2.5 border-t border-slate-900 text-center font-mono text-xs">
-            <div className="bg-slate-900/40 py-1.5 rounded-lg border border-slate-800/50">
-              <span className="text-[10px] text-slate-400 block">Discovered</span>
-              <span className="font-bold text-slate-200">{ig.discovered}</span>
+          <div className="grid grid-cols-4 gap-2 pt-2 border-t border-white/[0.04] text-[11px] font-mono">
+            <div>
+              <span className="text-[9px] text-slate-500 block">TARGET</span>
+              <span className="font-bold text-white">{ig.target}</span>
             </div>
-            <div className="bg-slate-900/40 py-1.5 rounded-lg border border-slate-800/50">
-              <span className="text-[10px] text-slate-400 block">Usable Stream</span>
+            <div>
+              <span className="text-[9px] text-slate-500 block">DISCOVERED</span>
+              <span className="font-bold text-slate-300">{ig.discovered}</span>
+            </div>
+            <div>
+              <span className="text-[9px] text-slate-500 block">USABLE</span>
               <span className="font-bold text-emerald-400">{ig.usable}</span>
             </div>
-            <div className="bg-slate-900/40 py-1.5 rounded-lg border border-slate-800/50">
-              <span className="text-[10px] text-slate-400 block">Shortfall</span>
-              <span className={`font-bold ${ig.shortfall > 0 ? "text-amber-400" : "text-slate-400"}`}>
-                {ig.shortfall || 0}
+            <div>
+              <span className="text-[9px] text-slate-500 block">SHORTFALL</span>
+              <span className={`font-bold ${ig.shortfall > 0 ? "text-amber-400" : "text-slate-500"}`}>
+                {ig.shortfall}
               </span>
             </div>
           </div>
         </div>
 
         {/* Meta Ad Library Channel Card */}
-        <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 shadow-inner relative overflow-hidden group">
+        <div className="bg-black/40 border border-white/10 rounded-2xl p-4.5 relative overflow-hidden">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-md">
+            <div className="flex items-center space-x-2">
+              <div className="w-7 h-7 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md">
                 <Layers className="w-4 h-4" />
               </div>
-              <div>
-                <h3 className="text-xs font-bold text-white tracking-wide">Meta Ad Library</h3>
-                <span className="text-[10px] text-slate-400 font-mono">Commercial Video Ads Engine</span>
-              </div>
+              <span className="text-xs font-bold text-white">Meta Ad Library Stream</span>
             </div>
-
-            <div className="text-right font-mono">
-              <span className="text-sm font-bold text-white">
-                {meta.discovered} <span className="text-slate-500 font-normal">/ {meta.target || 20}</span>
-              </span>
-              <span className="text-[9px] text-slate-500 block uppercase tracking-wider">Target Quota</span>
-            </div>
+            <span className="text-[11px] font-mono text-blue-400 font-bold">
+              {meta.usable} / {meta.target} Usable
+            </span>
           </div>
 
-          {/* Progress bar */}
-          <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden mb-3.5 p-0.5 border border-slate-800/80">
+          <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden mb-3">
             <div
-              className="bg-gradient-to-r from-blue-600 to-cyan-400 h-full rounded-full transition-all duration-500 shadow"
-              style={{ width: `${Math.min(100, ((meta.discovered || 0) / (meta.target || 20)) * 100)}%` }}
+              className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 rounded-full transition-all duration-300"
+              style={{ width: `${Math.min(100, (meta.usable / (meta.target || 1)) * 100)}%` }}
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-2 pt-2.5 border-t border-slate-900 text-center font-mono text-xs">
-            <div className="bg-slate-900/40 py-1.5 rounded-lg border border-slate-800/50">
-              <span className="text-[10px] text-slate-400 block">Discovered</span>
-              <span className="font-bold text-slate-200">{meta.discovered}</span>
+          <div className="grid grid-cols-4 gap-2 pt-2 border-t border-white/[0.04] text-[11px] font-mono">
+            <div>
+              <span className="text-[9px] text-slate-500 block">TARGET</span>
+              <span className="font-bold text-white">{meta.target}</span>
             </div>
-            <div className="bg-slate-900/40 py-1.5 rounded-lg border border-slate-800/50">
-              <span className="text-[10px] text-slate-400 block">Usable Stream</span>
+            <div>
+              <span className="text-[9px] text-slate-500 block">DISCOVERED</span>
+              <span className="font-bold text-slate-300">{meta.discovered}</span>
+            </div>
+            <div>
+              <span className="text-[9px] text-slate-500 block">USABLE</span>
               <span className="font-bold text-emerald-400">{meta.usable}</span>
             </div>
-            <div className="bg-slate-900/40 py-1.5 rounded-lg border border-slate-800/50">
-              <span className="text-[10px] text-slate-400 block">Shortfall</span>
-              <span className={`font-bold ${meta.shortfall > 0 ? "text-amber-400" : "text-slate-400"}`}>
-                {meta.shortfall || 0}
+            <div>
+              <span className="text-[9px] text-slate-500 block">SHORTFALL</span>
+              <span className={`font-bold ${meta.shortfall > 0 ? "text-amber-400" : "text-slate-500"}`}>
+                {meta.shortfall}
               </span>
             </div>
           </div>

@@ -1,5 +1,21 @@
-import React, { useState } from "react";
-import { Search, Link, Upload, Tag, Sparkles, CheckCircle2, ArrowRight, Zap, Headphones, Smartphone, Compass } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { 
+  Search, 
+  Link as LinkIcon, 
+  Upload, 
+  Sparkles, 
+  Zap, 
+  ArrowRight, 
+  CheckCircle2, 
+  Sliders, 
+  Globe, 
+  Cpu, 
+  Radio, 
+  Compass, 
+  Layers, 
+  Instagram,
+  RefreshCw
+} from "lucide-react";
 
 interface ProductInputProps {
   onStartSearch: (productData: {
@@ -16,370 +32,327 @@ interface ProductInputProps {
 }
 
 export const ProductInput: React.FC<ProductInputProps> = ({ onStartSearch, isLoading }) => {
-  const [activeTab, setActiveTab] = useState<"url" | "upload">("url");
+  const [mode, setMode] = useState<"instant" | "url" | "upload">("instant");
+  const [productName, setProductName] = useState("Sony WH-1000XM5");
+  const [brand, setBrand] = useState("Sony");
+  const [category, setCategory] = useState("Headphones");
   const [url, setUrl] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [inspecting, setInspecting] = useState(false);
-
-  // Extracted or manually edited product fields
-  const [name, setName] = useState("");
-  const [brand, setBrand] = useState("");
-  const [category, setCategory] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [description, setDescription] = useState("");
-  const [keywords, setKeywords] = useState<string[]>([]);
-  const [newKeyword, setNewKeyword] = useState("");
   const [requestedCount, setRequestedCount] = useState(20);
+  const [inspecting, setInspecting] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [keywords, setKeywords] = useState<string[]>(["wh1000xm5", "sony headphones", "noise cancelling", "xm5"]);
 
-  const handleInspect = async () => {
-    if (activeTab === "url" && !url.trim()) return;
-    if (activeTab === "upload" && !selectedFile) return;
+  // Sample preset packs
+  const loadPreset = (preset: "sony" | "boat" | "apple" | "nothing" | "dyson") => {
+    if (preset === "sony") {
+      setProductName("Sony WH-1000XM5");
+      setBrand("Sony");
+      setCategory("Headphones");
+      setKeywords(["wh1000xm5", "sony headphones", "noise cancelling", "xm5"]);
+    } else if (preset === "boat") {
+      setProductName("boAt Airdopes 141");
+      setBrand("boAt");
+      setCategory("Wireless Earbuds");
+      setKeywords(["airdopes", "boat earbuds", "tws", "earphones"]);
+    } else if (preset === "apple") {
+      setProductName("AirPods Pro 2");
+      setBrand("Apple");
+      setCategory("Wireless Earbuds");
+      setKeywords(["airpods pro", "airpods pro 2", "apple earbuds", "spatial audio"]);
+    } else if (preset === "nothing") {
+      setProductName("Nothing Phone (2)");
+      setBrand("Nothing");
+      setCategory("Smartphones");
+      setKeywords(["nothing phone", "glyph interface", "tech review"]);
+    } else {
+      setProductName("Dyson Airwrap Multi-Styler");
+      setBrand("Dyson");
+      setCategory("Personal Care");
+      setKeywords(["dyson airwrap", "hair styler", "curling review"]);
+    }
+  };
 
+  const handleInspectUrl = async () => {
+    if (!url.trim()) return;
     setInspecting(true);
     try {
       const formData = new FormData();
-      if (activeTab === "url") {
-        formData.append("url", url);
-      } else if (selectedFile) {
-        formData.append("image", selectedFile);
-      }
-
+      formData.append("url", url);
       const res = await fetch("/api/products/inspect", {
         method: "POST",
         body: formData,
       });
       const data = await res.json();
-
       if (data.success && data.metadata) {
         const m = data.metadata;
-        setName(m.name || "");
-        setBrand(m.brand || "");
-        setCategory(m.category || "");
-        setImageUrl(m.imageUrl || "");
-        setDescription(m.description || "");
-        setKeywords(m.keywords || []);
+        setProductName(m.name || productName);
+        setBrand(m.brand || brand);
+        setCategory(m.category || category);
+        setKeywords(m.keywords?.length ? m.keywords : [m.name || productName]);
+        setMode("instant");
       }
     } catch (err) {
-      console.error("Inspection error:", err);
+      console.error("Inspect error:", err);
     } finally {
       setInspecting(false);
     }
   };
 
-  const handleAddKeyword = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && newKeyword.trim()) {
-      e.preventDefault();
-      if (!keywords.includes(newKeyword.trim())) {
-        setKeywords([...keywords, newKeyword.trim()]);
-      }
-      setNewKeyword("");
-    }
-  };
-
-  const handleRemoveKeyword = (kw: string) => {
-    setKeywords(keywords.filter((k) => k !== kw));
-  };
-
-  const loadSample = (sampleType: "sony" | "boat" | "apple" | "nothing" | "dyson") => {
-    if (sampleType === "sony") {
-      setName("WH-1000XM5");
-      setBrand("Sony");
-      setCategory("Headphones");
-      setImageUrl("https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80");
-      setDescription("Industry-leading noise canceling headphones with dual processors and 8 microphones");
-      setKeywords(["wh1000xm5", "sony headphones", "noise cancelling", "xm5"]);
-    } else if (sampleType === "boat") {
-      setName("Airdopes 141");
-      setBrand("boAt");
-      setCategory("Wireless Earbuds");
-      setImageUrl("https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&auto=format&fit=crop&q=80");
-      setDescription("Wireless Earbuds with 42 hours playback, ENx Technology, and ASAP charge");
-      setKeywords(["airdopes", "boat earbuds", "tws", "earphones"]);
-    } else if (sampleType === "apple") {
-      setName("AirPods Pro 2");
-      setBrand("Apple");
-      setCategory("Wireless Earbuds");
-      setImageUrl("https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=600&auto=format&fit=crop&q=80");
-      setDescription("Active Noise Cancellation, Transparency mode, and Personalized Spatial Audio");
-      setKeywords(["airpods pro", "airpods pro 2", "apple earbuds", "spatial audio"]);
-    } else if (sampleType === "nothing") {
-      setName("Phone (2)");
-      setBrand("Nothing");
-      setCategory("Smartphones");
-      setImageUrl("https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&auto=format&fit=crop&q=80");
-      setDescription("Glyph Interface smartphone with dual 50MP camera and Snapdragon 8+ Gen 1");
-      setKeywords(["nothing phone", "glyph interface", "tech review"]);
-    } else {
-      setName("Airwrap Multi-Styler");
-      setBrand("Dyson");
-      setCategory("Personal Care");
-      setImageUrl("https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&auto=format&fit=crop&q=80");
-      setDescription("Styling barrels to curl and wave, and brushes to control, smooth or add volume");
-      setKeywords(["dyson airwrap", "hair styler", "curling review"]);
-    }
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!productName.trim() || isLoading) return;
 
     onStartSearch({
-      productName: name.trim(),
+      productName: productName.trim(),
       brand: brand.trim() || undefined,
       category: category.trim() || undefined,
       productUrl: url.trim() || undefined,
-      imageUrl: imageUrl.trim() || undefined,
-      description: description.trim() || undefined,
-      keywords: keywords.length > 0 ? keywords : [name.trim()],
+      keywords: keywords.length > 0 ? keywords : [productName.trim()],
       requestedCount,
     });
   };
 
   return (
-    <div className="relative bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl shadow-black/30 backdrop-blur-md">
-      {/* Top Banner: Title & Sample Chips */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between pb-5 border-b border-slate-800/80 gap-4">
-        <div>
-          <div className="flex items-center space-x-2">
-            <span className="flex h-2 w-2 rounded-full bg-indigo-500"></span>
-            <h2 className="text-xs font-bold text-slate-200 uppercase tracking-widest">
-              1. Product Search & Attribute Targeting
-            </h2>
+    <div className="relative group rounded-3xl p-1 bg-gradient-to-b from-white/10 via-white/[0.04] to-transparent shadow-2xl">
+      {/* Ambient background glow */}
+      <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-3/4 h-28 bg-indigo-500/15 blur-3xl rounded-full pointer-events-none" />
+
+      <div className="relative bg-obsidian-900/90 border border-white/[0.08] rounded-[22px] p-6 sm:p-7 backdrop-blur-2xl">
+        {/* Top Control Bar: Title & Input Mode Switcher */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-white/[0.06] gap-3">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <Cpu className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-xs font-mono font-bold tracking-wider uppercase text-white flex items-center gap-2">
+                <span>AI Creative Discovery Deck</span>
+                <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+              </h2>
+              <p className="text-[11px] text-slate-400">
+                Parallel commercial video discovery across Instagram Reels & Meta Ad Library
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Specify any product or link to retrieve real Instagram Reels and Meta video ads.
-          </p>
+
+          {/* Mode Tabs */}
+          <div className="flex items-center p-1 bg-black/60 rounded-xl border border-white/10 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setMode("instant")}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                mode === "instant"
+                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>Instant Product</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("url")}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                mode === "url"
+                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <LinkIcon className="w-3.5 h-3.5" />
+              <span>Store Link</span>
+            </button>
+          </div>
         </div>
 
-        {/* Quick Sample Presets */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] font-mono text-slate-400 mr-1 flex items-center gap-1">
-            <Zap className="w-3 h-3 text-amber-400" /> Presets:
+        {/* Preset Chips Strip */}
+        <div className="flex flex-wrap items-center gap-2 pt-4 pb-2">
+          <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1 mr-1">
+            <Compass className="w-3 h-3 text-amber-400" /> Presets:
           </span>
           <button
             type="button"
-            onClick={() => loadSample("sony")}
-            className="text-xs font-medium px-2.5 py-1 rounded-lg bg-slate-950/80 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-slate-700 transition shadow-sm"
-          >
-            🎧 Sony XM5
-          </button>
-          <button
-            type="button"
-            onClick={() => loadSample("boat")}
-            className="text-xs font-medium px-2.5 py-1 rounded-lg bg-slate-950/80 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-slate-700 transition shadow-sm"
-          >
-            ⚡ boAt Airdopes
-          </button>
-          <button
-            type="button"
-            onClick={() => loadSample("apple")}
-            className="text-xs font-medium px-2.5 py-1 rounded-lg bg-slate-950/80 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-slate-700 transition shadow-sm"
-          >
-            🍎 AirPods Pro
-          </button>
-          <button
-            type="button"
-            onClick={() => loadSample("nothing")}
-            className="text-xs font-medium px-2.5 py-1 rounded-lg bg-slate-950/80 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-slate-700 transition shadow-sm"
-          >
-            📱 Nothing Phone
-          </button>
-        </div>
-      </div>
-
-      {/* URL or Image Inspection */}
-      <div className="mt-5">
-        <div className="flex items-center space-x-2 mb-3">
-          <button
-            type="button"
-            onClick={() => setActiveTab("url")}
-            className={`flex items-center space-x-2 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-              activeTab === "url"
-                ? "bg-indigo-950/70 text-indigo-300 border border-indigo-700/60 shadow-sm"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+            onClick={() => loadPreset("sony")}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+              productName.includes("Sony")
+                ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/50 shadow-sm"
+                : "bg-white/[0.03] hover:bg-white/[0.08] text-slate-300 border-white/10"
             }`}
           >
-            <Link className="w-3.5 h-3.5" />
-            <span>Product Page URL (Auto-Extract)</span>
+            🎧 Sony WH-1000XM5
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("upload")}
-            className={`flex items-center space-x-2 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-              activeTab === "upload"
-                ? "bg-indigo-950/70 text-indigo-300 border border-indigo-700/60 shadow-sm"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+            onClick={() => loadPreset("boat")}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+              productName.includes("boAt")
+                ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/50 shadow-sm"
+                : "bg-white/[0.03] hover:bg-white/[0.08] text-slate-300 border-white/10"
             }`}
           >
-            <Upload className="w-3.5 h-3.5" />
-            <span>Upload Reference Photo</span>
+            ⚡ boAt Airdopes 141
+          </button>
+          <button
+            type="button"
+            onClick={() => loadPreset("apple")}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+              productName.includes("AirPods")
+                ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/50 shadow-sm"
+                : "bg-white/[0.03] hover:bg-white/[0.08] text-slate-300 border-white/10"
+            }`}
+          >
+            🍎 AirPods Pro 2
+          </button>
+          <button
+            type="button"
+            onClick={() => loadPreset("nothing")}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+              productName.includes("Nothing")
+                ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/50 shadow-sm"
+                : "bg-white/[0.03] hover:bg-white/[0.08] text-slate-300 border-white/10"
+            }`}
+          >
+            ✨ Nothing Phone (2)
+          </button>
+          <button
+            type="button"
+            onClick={() => loadPreset("dyson")}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+              productName.includes("Dyson")
+                ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/50 shadow-sm"
+                : "bg-white/[0.03] hover:bg-white/[0.08] text-slate-300 border-white/10"
+            }`}
+          >
+            💨 Dyson Airwrap
           </button>
         </div>
 
-        {activeTab === "url" ? (
-          <div className="flex gap-2.5">
-            <div className="relative flex-1">
-              <input
-                type="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="e.g. https://www.sony.co.in/headphones/products/wh-1000xm5"
-                className="w-full bg-slate-950/90 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/60 transition shadow-inner"
-              />
+        {/* Input Form Body */}
+        <form onSubmit={handleSubmit} className="mt-3 space-y-4">
+          {mode === "url" ? (
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Globe className="w-4 h-4 text-slate-500 absolute left-4 top-3.5" />
+                <input
+                  type="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="Paste Amazon, Shopify, or brand product link (e.g. https://www.amazon.in/dp/...)"
+                  className="w-full bg-black/60 border border-white/10 rounded-2xl pl-11 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition font-sans"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleInspectUrl}
+                disabled={inspecting || !url.trim()}
+                className="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-medium text-xs border border-white/10 flex items-center space-x-2 transition disabled:opacity-50"
+              >
+                {inspecting ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+                    <span>Analyzing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Extract Specs</span>
+                  </>
+                )}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={handleInspect}
-              disabled={inspecting || !url}
-              className="px-5 py-2.5 bg-slate-800 hover:bg-slate-750 text-white rounded-xl text-xs font-medium border border-slate-700/80 disabled:opacity-50 transition flex items-center space-x-2 shadow-sm"
-            >
-              {inspecting ? (
-                <>
-                  <Sparkles className="w-3.5 h-3.5 animate-spin text-indigo-400" />
-                  <span>Extracting...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Inspect URL</span>
-                </>
-              )}
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3 bg-slate-950/70 p-3 rounded-xl border border-slate-800 border-dashed">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-              className="text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer"
-            />
-            <button
-              type="button"
-              onClick={handleInspect}
-              disabled={inspecting || !selectedFile}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-white rounded-lg text-xs font-medium border border-slate-700 disabled:opacity-50 transition"
-            >
-              {inspecting ? "Analyzing Vision..." : "Extract Features"}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Main Form: Attributes & Target Trigger */}
-      <form onSubmit={handleSubmit} className="mt-5 pt-5 border-t border-slate-800/80">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          {/* Left: Inputs */}
-          <div className="lg:col-span-8 space-y-3.5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Product Name <span className="text-rose-400">*</span>
-                </label>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+              {/* Main Product Name Field */}
+              <div className="md:col-span-6 relative">
+                <Search className="w-4 h-4 text-indigo-400 absolute left-4 top-3.5" />
                 <input
                   type="text"
                   required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. WH-1000XM5"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/60 transition shadow-inner font-medium"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  placeholder="Enter exact product name or model (e.g. Sony WH-1000XM5)..."
+                  className="w-full bg-black/60 border border-white/10 rounded-2xl pl-11 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition font-sans font-medium"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Brand Name
-                </label>
+              {/* Brand Tag */}
+              <div className="md:col-span-3">
                 <input
                   type="text"
                   value={brand}
                   onChange={(e) => setBrand(e.target.value)}
-                  placeholder="e.g. Sony"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/60 transition shadow-inner"
+                  placeholder="Brand (e.g. Sony)"
+                  className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition font-sans"
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
-                <span>Search Keywords & Tags</span>
-                <span className="text-[10px] font-normal text-slate-400">Press Enter to add tag</span>
-              </label>
-              <div className="flex flex-wrap gap-1.5 p-2 bg-slate-950 border border-slate-800 rounded-xl min-h-[46px] items-center shadow-inner">
-                {keywords.map((kw) => (
-                  <span
-                    key={kw}
-                    className="inline-flex items-center text-xs px-2.5 py-1 rounded-lg bg-slate-800/90 text-slate-200 border border-slate-700/80 shadow-sm"
-                  >
-                    <span>{kw}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveKeyword(kw)}
-                      className="ml-1.5 text-slate-400 hover:text-rose-400 font-bold transition"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
+              {/* Category Tag */}
+              <div className="md:col-span-3">
                 <input
                   type="text"
-                  value={newKeyword}
-                  onChange={(e) => setNewKeyword(e.target.value)}
-                  onKeyDown={handleAddKeyword}
-                  placeholder={keywords.length === 0 ? "Type keyword (e.g. wireless, review) and press Enter..." : "+ Add keyword"}
-                  className="bg-transparent text-xs text-slate-200 placeholder-slate-600 focus:outline-none px-2 py-1 flex-1 min-w-[120px]"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  placeholder="Category (e.g. Headphones)"
+                  className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition font-sans"
                 />
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Right: Target Summary & CTA */}
-          <div className="lg:col-span-4 flex flex-col justify-between bg-slate-950/80 p-4 rounded-xl border border-slate-800 shadow-inner space-y-4">
-            <div className="flex items-center space-x-3.5">
-              {imageUrl ? (
-                <img
-                  src={imageUrl}
-                  alt={name || "Product"}
-                  className="w-16 h-16 object-cover rounded-xl border border-slate-800 bg-slate-900 shadow"
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-xl border border-dashed border-slate-800 flex items-center justify-center text-slate-600 text-[10px] text-center p-1 bg-slate-900/40">
-                  Visual Silhouette
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block font-bold">
-                  Engine Scope
+          {/* AI Keywords & Quota Deck */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-2 gap-4">
+            {/* Live Token Radar */}
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono">
+              <span className="text-slate-400 flex items-center gap-1 mr-1">
+                <Radio className="w-3 h-3 text-emerald-400" /> Active Radar:
+              </span>
+              {keywords.map((kw, i) => (
+                <span
+                  key={i}
+                  className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/10 text-slate-300"
+                >
+                  #{kw}
                 </span>
-                <span className="text-sm font-bold text-white block truncate">
-                  {name ? `${brand ? brand + " " : ""}${name}` : "Pending Product Input"}
-                </span>
-                <span className="text-[11px] text-slate-400 block mt-0.5 font-mono">
-                  Target: 20 Reels + 20 Ads
-                </span>
-              </div>
+              ))}
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading || !name.trim()}
-              className="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white rounded-xl text-xs font-bold tracking-wider uppercase transition-all duration-200 disabled:opacity-40 flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/20 active:scale-[0.99]"
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 animate-spin text-indigo-200" />
-                  <span>Discovering Reels & Ads...</span>
-                </span>
-              ) : (
-                <>
-                  <span>Launch Discovery Engine</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
+            {/* Target Count & Launch Button */}
+            <div className="flex items-center space-x-3 self-end sm:self-auto">
+              <div className="flex items-center space-x-2 bg-black/60 border border-white/10 px-3 py-1.5 rounded-xl">
+                <span className="text-[11px] font-mono text-slate-400">Target Quota:</span>
+                <select
+                  value={requestedCount}
+                  onChange={(e) => setRequestedCount(Number(e.target.value))}
+                  className="bg-transparent text-xs font-mono font-bold text-indigo-300 focus:outline-none cursor-pointer"
+                >
+                  <option value={10} className="bg-obsidian-950 text-white">10 each (20 total)</option>
+                  <option value={20} className="bg-obsidian-950 text-white">20 each (40 total)</option>
+                  <option value={30} className="bg-obsidian-950 text-white">30 each (60 total)</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading || !productName.trim()}
+                className="relative group overflow-hidden px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-xs tracking-wide shadow-xl shadow-indigo-600/30 active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              >
+                {isLoading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                    <span>Searching Channels...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 text-amber-300" />
+                    <span>Start AI Discovery</span>
+                    <ArrowRight className="w-4 h-4 ml-0.5 group-hover:translate-x-1 transition" />
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };

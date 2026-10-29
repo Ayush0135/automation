@@ -14,8 +14,8 @@ async function main() {
     executablePath: '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
     headless: 'new',
     defaultViewport: {
-      width: 1280,
-      height: 820,
+      width: 1360,
+      height: 860,
       deviceScaleFactor: 1.5,
     },
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--hide-scrollbars'],
@@ -27,69 +27,86 @@ async function main() {
 
   // Wait for results to be populated
   await page.waitForSelector('.grid', { timeout: 10000 });
-  await new Promise((r) => setTimeout(r, 1500));
+  await new Promise((r) => setTimeout(r, 1200));
 
   let frameCount = 0;
-  const captureFrame = async (delay = 100) => {
+  const captureFrame = async (delay = 80) => {
     const framePath = path.join(framesDir, `frame_${String(frameCount).padStart(4, '0')}.png`);
     await page.screenshot({ path: framePath });
     frameCount++;
     if (delay > 0) await new Promise((r) => setTimeout(r, delay));
   };
 
-  console.log('Capturing initial state...');
-  for (let i = 0; i < 10; i++) {
-    await captureFrame(100);
-  }
-
-  console.log('Scrolling down results...');
-  for (let scroll = 0; scroll <= 700; scroll += 35) {
-    await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), scroll);
-    await captureFrame(80);
-  }
-
-  // Pause at middle of results
+  console.log('1. Capturing hero deck & KPI strip...');
   for (let i = 0; i < 8; i++) {
     await captureFrame(100);
   }
 
-  // Click on the first result card's details
-  console.log('Opening detail modal...');
-  const cardClicked = await page.evaluate(() => {
-    const cards = document.querySelectorAll('.grid > div');
-    if (cards.length > 0) {
-      cards[0].click();
-      return true;
+  // Hover over the first video card to trigger autoplay preview
+  console.log('2. Hovering over first video reel...');
+  const firstCard = await page.$('.grid > div');
+  if (firstCard) {
+    const box = await firstCard.boundingBox();
+    if (box) {
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      for (let i = 0; i < 12; i++) {
+        await captureFrame(90);
+      }
     }
-    return false;
-  });
-
-  if (cardClicked) {
-    await new Promise((r) => setTimeout(r, 600));
-    // Capture modal open
-    for (let i = 0; i < 15; i++) {
-      await captureFrame(100);
-    }
-
-    // Close modal
-    await page.keyboard.press('Escape');
-    await new Promise((r) => setTimeout(r, 400));
   }
 
-  // Scroll back to top
-  console.log('Scrolling back to top...');
-  for (let scroll = 700; scroll >= 0; scroll -= 50) {
+  console.log('3. Scrolling down the 9:16 Reels Wall...');
+  for (let scroll = 0; scroll <= 600; scroll += 40) {
     await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), scroll);
     await captureFrame(70);
   }
 
-  // Hold top state
-  for (let i = 0; i < 8; i++) {
+  // Hover over another card lower down
+  const cards = await page.$$('.grid > div');
+  if (cards.length > 3) {
+    const box = await cards[3].boundingBox();
+    if (box) {
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      for (let i = 0; i < 8; i++) {
+        await captureFrame(90);
+      }
+    }
+  }
+
+  // Scroll back to filter bar
+  console.log('4. Scrolling back to filters and switching to Cinema Studio View...');
+  for (let scroll = 600; scroll >= 300; scroll -= 60) {
+    await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), scroll);
+    await captureFrame(60);
+  }
+
+  // Click on "Cinema Studio" view button
+  await page.evaluate(() => {
+    const buttons = Array.from(document.querySelectorAll('button'));
+    const cinemaBtn = buttons.find((b) => b.textContent && b.textContent.includes('Cinema Studio'));
+    if (cinemaBtn) cinemaBtn.click();
+  });
+
+  await new Promise((r) => setTimeout(r, 600));
+
+  console.log('5. Capturing Cinema Studio split theater...');
+  for (let i = 0; i < 14; i++) {
+    await captureFrame(100);
+  }
+
+  // Scroll back to top
+  for (let scroll = 300; scroll >= 0; scroll -= 60) {
+    await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), scroll);
+    await captureFrame(60);
+  }
+
+  // Final hold
+  for (let i = 0; i < 6; i++) {
     await captureFrame(100);
   }
 
   await browser.close();
-  console.log(`Captured ${frameCount} frames. Generating GIF and MP4 with ffmpeg...`);
+  console.log(`Captured ${frameCount} frames. Generating high-def GIF and MP4 with ffmpeg...`);
 
   const outputGif = path.join(__dirname, '../docs/assets/demo.gif');
   const outputMp4 = path.join(__dirname, '../docs/assets/demo.mp4');
