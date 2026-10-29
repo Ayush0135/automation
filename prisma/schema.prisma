@@ -1,0 +1,100 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Product {
+  id               String   @id @default(uuid())
+  name             String
+  brand            String?
+  category         String?
+  productUrl       String?  @map("product_url")
+  imageUrl         String?  @map("image_url")
+  description      String?
+  visualAttributes String?  @map("visual_attributes") // JSON string of attributes
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  searches Search[]
+
+  @@map("products")
+}
+
+model Search {
+  id                       String    @id @default(uuid())
+  productId                String    @map("product_id")
+  status                   String    @default("pending") // pending, running, completed, partial, failed
+  requestedInstagramCount  Int       @default(20) @map("requested_instagram_count")
+  requestedMetaCount       Int       @default(20) @map("requested_meta_count")
+  discoveredInstagramCount Int       @default(0) @map("discovered_instagram_count")
+  discoveredMetaCount      Int       @default(0) @map("discovered_meta_count")
+  usableInstagramCount     Int       @default(0) @map("usable_instagram_count")
+  usableMetaCount          Int       @default(0) @map("usable_meta_count")
+  matchedCount             Int       @default(0) @map("matched_count")
+  errorSummary             String?   @map("error_summary")
+  startedAt                DateTime  @default(now()) @map("started_at")
+  completedAt              DateTime? @map("completed_at")
+
+  product Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  results SearchResult[]
+
+  @@map("searches")
+}
+
+model Video {
+  id                String    @id @default(uuid())
+  source            String    // "instagram" | "meta_ad_library"
+  sourceId          String    @map("source_id")
+  permalink         String
+  advertiserName    String?   @map("advertiser_name")
+  captionOrAdText   String?   @map("caption_or_ad_text")
+  thumbnailUrl      String?   @map("thumbnail_url")
+  videoUrl          String?   @map("video_url")
+  mediaType         String    @default("video") @map("media_type")
+  metadataJson      String?   @map("metadata_json")
+  firstDiscoveredAt DateTime  @default(now()) @map("first_discovered_at")
+  lastSeenAt        DateTime  @default(now()) @map("last_seen_at")
+
+  results      SearchResult[]
+  fingerprints VideoFingerprint[]
+
+  @@unique([source, sourceId], name: "source_sourceId")
+  @@index([permalink])
+  @@map("videos")
+}
+
+model SearchResult {
+  id               String   @id @default(uuid())
+  searchId         String   @map("search_id")
+  videoId          String   @map("video_id")
+  similarityScore  Float    @default(0.0) @map("similarity_score")
+  matchStatus      String   @default("unverified") @map("match_status") // discovered, usable, matched, verified_match
+  matchExplanation String?  @map("match_explanation")
+  evidenceType     String   @default("thumbnail") @map("evidence_type") // video_frame, thumbnail, text_metadata
+  isDuplicate      Boolean  @default(false) @map("is_duplicate")
+  isPreviouslySeen Boolean  @default(false) @map("is_previously_seen")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  search Search @relation(fields: [searchId], references: [id], onDelete: Cascade)
+  video  Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@index([searchId])
+  @@index([videoId])
+  @@map("search_results")
+}
+
+model VideoFingerprint {
+  id               String   @id @default(uuid())
+  videoId          String   @map("video_id")
+  fingerprintType  String   @map("fingerprint_type") // phash, title_hash, canonical_url
+  fingerprintValue String   @map("fingerprint_value")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@index([fingerprintType, fingerprintValue])
+  @@map("video_fingerprints")
+}

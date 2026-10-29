@@ -1,0 +1,44 @@
+# Ignore everything in Google Drive by default
+/*
+
+# Whitelist project files and directories
+!/.gitignore
+!/.env.example
+!/package.json
+!/package-lock.json
+!/tsconfig.json
+!/tsconfig.server.json
+!/vitest.config.ts
+!/README.md
+!/src/
+!/src/**
+!/client/
+!/client/**
+!/prisma/
+!/prisma/schema.prisma
+!/docs/
+!/docs/**
+!/scripts/
+!/scripts/**
+!/test/
+!/test/**
+!/.agents/
+!/.agents/**
+
+# Sensitive & build artifacts (strictly ignored)
+node_modules/
+.env
+.env.local
+.env.*.local
+.tmp_frames/
+dist/
+build/
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+prisma/*.db
+prisma/*.db-journal
+*.log
+.DS_Store
+uploads/
