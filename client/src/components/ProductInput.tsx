@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo } from "react";
 import { 
   Search, 
   Link as LinkIcon, 
@@ -31,7 +31,7 @@ interface ProductInputProps {
   isLoading: boolean;
 }
 
-export const ProductInput: React.FC<ProductInputProps> = ({ onStartSearch, isLoading }) => {
+export const ProductInput: React.FC<ProductInputProps> = memo(({ onStartSearch, isLoading }) => {
   const [mode, setMode] = useState<"instant" | "url" | "upload">("instant");
   const [productName, setProductName] = useState("Sony WH-1000XM5");
   const [brand, setBrand] = useState("Sony");
@@ -355,4 +355,4 @@ export const ProductInput: React.FC<ProductInputProps> = ({ onStartSearch, isLoa
       </div>
     </div>
   );
-};
+});

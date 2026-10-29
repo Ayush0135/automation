@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { 
   Instagram, 
   Layers, 
@@ -39,7 +39,7 @@ interface FiltersBarProps {
   };
 }
 
-export const FiltersBar: React.FC<FiltersBarProps> = ({
+export const FiltersBar: React.FC<FiltersBarProps> = memo(({
   activeTab,
   onTabChange,
   minScore,
@@ -210,4 +210,4 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
       </div>
     </div>
   );
-};
+});

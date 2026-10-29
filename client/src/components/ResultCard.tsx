@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, memo } from "react";
 import { 
   Play, 
   Pause, 
@@ -15,7 +15,6 @@ import {
   Sparkles, 
   ShieldCheck, 
   Download,
-  Share2,
   Clock,
   Radio
 } from "lucide-react";
@@ -23,22 +22,18 @@ import {
 interface ResultCardProps {
   item: any;
   onInspect?: (item: any) => void;
-  onToggleFavorite?: (item: any) => void;
-  isFavorited?: boolean;
 }
 
-export const ResultCard: React.FC<ResultCardProps> = ({ 
+export const ResultCard: React.FC<ResultCardProps> = memo(({ 
   item, 
-  onInspect,
-  onToggleFavorite,
-  isFavorited = false
+  onInspect
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
-  const [progress, setProgress] = useState(0);
   const [copied, setCopied] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const progressRef = useRef<HTMLDivElement | null>(null);
 
   const isInstagram = item.source === "instagram";
   const scorePercent = Math.round((item.similarityScore || 0) * 100);
@@ -81,7 +76,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
   const comments = formatNumber(item.metadata?.comments);
   const duration = item.metadata?.duration ? `${Math.round(item.metadata.duration)}s` : "0:25";
 
-  // Autoplay on hover handling
+  // Autoplay only when hovered to keep 60fps & instant responsiveness
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -91,21 +86,24 @@ export const ResultCard: React.FC<ResultCardProps> = ({
       video.play().then(() => {
         setIsPlaying(true);
       }).catch(() => {
-        // Autoplay may be blocked if unmuted
+        // Autoplay may be restricted
       });
     } else {
       video.pause();
       video.currentTime = 0;
       setIsPlaying(false);
-      setProgress(0);
+      if (progressRef.current) {
+        progressRef.current.style.width = "0%";
+      }
     }
   }, [isHovered, isMuted, item.videoUrl]);
 
+  // High performance direct DOM progress update (zero React re-renders)
   const handleTimeUpdate = () => {
-    if (videoRef.current) {
+    if (videoRef.current && progressRef.current) {
       const current = videoRef.current.currentTime;
       const total = videoRef.current.duration || 1;
-      setProgress((current / total) * 100);
+      progressRef.current.style.width = `${(current / total) * 100}%`;
     }
   };
 
@@ -136,27 +134,26 @@ export const ResultCard: React.FC<ResultCardProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => onInspect?.(item)}
-      className="group relative cursor-pointer flex flex-col rounded-3xl overflow-hidden bg-obsidian-900 border border-white/[0.08] hover:border-indigo-500/50 transition-all duration-500 reel-shadow hover:shadow-[0_0_35px_rgba(99,102,241,0.22)] hover:-translate-y-1.5"
+      className="group relative cursor-pointer flex flex-col rounded-3xl overflow-hidden bg-obsidian-900 border border-white/[0.08] hover:border-indigo-500/60 transition-all duration-300 reel-shadow hover:shadow-[0_0_30px_rgba(99,102,241,0.25)] hover:-translate-y-1 will-change-transform"
     >
-      {/* 9:16 Vertical Video Frame (Standard Reel / Story Aspect Ratio) */}
+      {/* 9:16 Vertical Video Frame */}
       <div className="relative aspect-[9/16] w-full bg-black overflow-hidden flex items-center justify-center">
-        {/* Actual Video Layer */}
-        {item.videoUrl ? (
+        {/* Mount video ONLY on hover for zero background CPU load, otherwise display cached image */}
+        {isHovered && item.videoUrl ? (
           <video
             ref={videoRef}
             src={item.videoUrl}
-            poster={item.thumbnailUrl}
             playsInline
             loop
             muted={isMuted}
             onTimeUpdate={handleTimeUpdate}
-            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
           />
         ) : item.thumbnailUrl ? (
           <img
             src={item.thumbnailUrl}
             alt={item.captionOrAdText || "Video thumbnail"}
-            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
             loading="lazy"
           />
         ) : (
@@ -167,13 +164,13 @@ export const ResultCard: React.FC<ResultCardProps> = ({
           </div>
         )}
 
-        {/* Ambient Top & Bottom Vignettes */}
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/80 via-transparent to-black/95 opacity-80 group-hover:opacity-90 transition-opacity" />
+        {/* Top & Bottom Vignettes */}
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/80 via-transparent to-black/95 opacity-85 group-hover:opacity-95 transition-opacity" />
 
         {/* Top Header Floating Glass Strip */}
-        <div className="absolute top-3 inset-x-3 flex items-center justify-between z-10">
+        <div className="absolute top-3 inset-x-3 flex items-center justify-between z-10 pointer-events-none">
           {/* Creator / Publisher Pill */}
-          <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white shadow-lg">
+          <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/10 text-white shadow-lg pointer-events-auto">
             {isInstagram ? (
               <div className="w-4 h-4 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 flex items-center justify-center">
                 <Instagram className="w-2.5 h-2.5 text-white" />
@@ -203,12 +200,13 @@ export const ResultCard: React.FC<ResultCardProps> = ({
         </div>
 
         {/* Center Hover Controls */}
-        <div className={`absolute inset-0 flex items-center justify-center z-10 transition-all duration-300 ${
+        <div className={`absolute inset-0 flex items-center justify-center z-10 transition-all duration-200 ${
           isHovered ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"
         }`}>
-          <div className="flex items-center space-x-2 bg-black/70 backdrop-blur-xl border border-white/20 p-1.5 rounded-2xl shadow-2xl">
+          <div className="flex items-center space-x-2 bg-black/80 backdrop-blur-md border border-white/20 p-1.5 rounded-2xl shadow-2xl">
             {/* Direct Play / Pause status */}
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 if (videoRef.current) {
@@ -234,6 +232,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
             {/* Quick Sound Toggle */}
             {item.videoUrl && (
               <button
+                type="button"
                 onClick={handleSoundToggle}
                 className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition active:scale-95"
                 title={isMuted ? "Unmute audio" : "Mute audio"}
@@ -248,6 +247,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
 
             {/* Full Theater View */}
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onInspect?.(item);
@@ -260,12 +260,12 @@ export const ResultCard: React.FC<ResultCardProps> = ({
           </div>
         </div>
 
-        {/* Dynamic Video Progress Scrubber */}
+        {/* High performance hardware-accelerated scrubber */}
         {item.videoUrl && (
-          <div className="absolute bottom-0 inset-x-0 h-1 bg-white/10 z-20 overflow-hidden">
+          <div className="absolute bottom-0 inset-x-0 h-1 bg-white/10 z-20 overflow-hidden pointer-events-none">
             <div 
-              className="h-full bg-gradient-to-r from-indigo-500 via-rose-500 to-amber-400 transition-all duration-100 ease-linear"
-              style={{ width: `${progress}%` }}
+              ref={progressRef}
+              className="h-full bg-gradient-to-r from-indigo-500 via-rose-500 to-amber-400 w-0 transition-all duration-75 ease-linear"
             />
           </div>
         )}
@@ -274,8 +274,8 @@ export const ResultCard: React.FC<ResultCardProps> = ({
         <div className="absolute bottom-2.5 inset-x-2.5 z-10 flex flex-col space-y-2 pointer-events-auto">
           {/* Audio Track Tag & Duration */}
           <div className="flex items-center justify-between text-[11px] font-mono text-slate-300 px-1">
-            <div className="flex items-center space-x-1.5 truncate max-w-[70%] bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/10">
-              {/* Animated Sound Wave Bars */}
+            <div className="flex items-center space-x-1.5 truncate max-w-[70%] bg-black/60 px-2 py-0.5 rounded-md border border-white/10">
+              {/* Sound Wave Bars */}
               <div className="flex items-end space-x-0.5 h-3">
                 <span className={`w-0.5 bg-indigo-400 rounded-full ${isPlaying ? "animate-sound-wave-1" : "h-1"}`} />
                 <span className={`w-0.5 bg-pink-400 rounded-full ${isPlaying ? "animate-sound-wave-2" : "h-2"}`} />
@@ -287,7 +287,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
               </span>
             </div>
 
-            <div className="flex items-center space-x-1 text-[10px] font-mono text-slate-400 bg-black/50 backdrop-blur-md px-1.5 py-0.5 rounded-md border border-white/10">
+            <div className="flex items-center space-x-1 text-[10px] font-mono text-slate-400 bg-black/60 px-1.5 py-0.5 rounded-md border border-white/10">
               <Clock className="w-2.5 h-2.5" />
               <span>{duration}</span>
             </div>
@@ -321,11 +321,12 @@ export const ResultCard: React.FC<ResultCardProps> = ({
               )}
             </div>
 
-            {/* Quick Action Button */}
+            {/* Quick Action Buttons */}
             <div className="flex items-center space-x-1">
               <button
+                type="button"
                 onClick={handleCopyLink}
-                className="p-1.5 rounded-lg bg-black/60 hover:bg-white/20 text-slate-300 hover:text-white transition border border-white/10"
+                className="p-1.5 rounded-lg bg-black/60 hover:bg-white/20 text-slate-300 hover:text-white transition border border-white/10 active:scale-95"
                 title="Copy Reel URL"
               >
                 {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
@@ -337,7 +338,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
                   rel="noreferrer"
                   download
                   onClick={(e) => e.stopPropagation()}
-                  className="p-1.5 rounded-lg bg-black/60 hover:bg-white/20 text-slate-300 hover:text-white transition border border-white/10"
+                  className="p-1.5 rounded-lg bg-black/60 hover:bg-white/20 text-slate-300 hover:text-white transition border border-white/10 active:scale-95"
                   title="Download MP4 stream"
                 >
                   <Download className="w-3 h-3" />
@@ -346,9 +347,9 @@ export const ResultCard: React.FC<ResultCardProps> = ({
             </div>
           </div>
 
-          {/* Token Match Chips (Revealed on hover) */}
+          {/* Token Match Chips */}
           {matchedTokens.length > 0 && isHovered && (
-            <div className="flex flex-wrap gap-1 pt-1 animate-in fade-in slide-in-from-bottom-1 duration-200">
+            <div className="flex flex-wrap gap-1 pt-1 animate-in fade-in duration-150">
               {matchedTokens.slice(0, 3).map((tok, i) => (
                 <span key={i} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-700/50">
                   +{tok}
@@ -360,4 +361,4 @@ export const ResultCard: React.FC<ResultCardProps> = ({
       </div>
     </div>
   );
-};
+});

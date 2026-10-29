@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Header } from "./components/Header.js";
 import { ProductInput } from "./components/ProductInput.js";
 import { SearchProgress } from "./components/SearchProgress.js";
@@ -52,6 +52,38 @@ export default function App() {
   const [statusOpen, setStatusOpen] = useState(false);
   const [historyList, setHistoryList] = useState<any[]>([]);
   const [providerStatus, setProviderStatus] = useState<any>(null);
+
+  const handleInspectItem = useCallback((item: any) => {
+    setSelectedDetailItem(item);
+  }, []);
+
+  const handleSelectCinemaItem = useCallback((item: any) => {
+    setSelectedCinemaItem(item);
+  }, []);
+
+  const handleTabChange = useCallback((tab: "all" | "instagram" | "meta_ad_library") => {
+    setActiveTab(tab);
+  }, []);
+
+  const handleMinScoreChange = useCallback((score: number) => {
+    setMinScore(score);
+  }, []);
+
+  const handleSortByChange = useCallback((sort: "score" | "recent" | "views") => {
+    setSortBy(sort);
+  }, []);
+
+  const handleViewModeChange = useCallback((mode: "reels" | "cinema" | "table") => {
+    setViewMode(mode);
+  }, []);
+
+  const handleToggleDuplicates = useCallback(() => {
+    setShowDuplicates((prev) => !prev);
+  }, []);
+
+  const handleTogglePreviouslySeen = useCallback(() => {
+    setShowPreviouslySeen((prev) => !prev);
+  }, []);
 
   // Load initial health & provider status
   useEffect(() => {
@@ -338,19 +370,19 @@ export default function App() {
           <div className="space-y-6">
             <FiltersBar
               activeTab={activeTab}
-              onTabChange={setActiveTab}
+              onTabChange={handleTabChange}
               minScore={minScore}
-              onMinScoreChange={setMinScore}
+              onMinScoreChange={handleMinScoreChange}
               showDuplicates={showDuplicates}
-              onToggleDuplicates={() => setShowDuplicates(!showDuplicates)}
+              onToggleDuplicates={handleToggleDuplicates}
               showPreviouslySeen={showPreviouslySeen}
-              onTogglePreviouslySeen={() => setShowPreviouslySeen(!showPreviouslySeen)}
+              onTogglePreviouslySeen={handleTogglePreviouslySeen}
               searchTerm={searchTerm}
               onSearchTermChange={setSearchTerm}
               sortBy={sortBy}
-              onSortByChange={setSortBy}
+              onSortByChange={handleSortByChange}
               viewMode={viewMode}
-              onViewModeChange={setViewMode}
+              onViewModeChange={handleViewModeChange}
               counts={{
                 all: results.length,
                 instagram: igCount,
@@ -392,7 +424,7 @@ export default function App() {
               <StudioCinemaView
                 items={filteredResults}
                 selectedItem={selectedCinemaItem || filteredResults[0]}
-                onSelectItem={(item) => setSelectedCinemaItem(item)}
+                onSelectItem={handleSelectCinemaItem}
               />
             ) : viewMode === "reels" ? (
               /* 9:16 Vertical Video Reels Wall (Creative Center style) */
@@ -401,7 +433,7 @@ export default function App() {
                   <ResultCard
                     key={item.id}
                     item={item}
-                    onInspect={(selected) => setSelectedDetailItem(selected)}
+                    onInspect={handleInspectItem}
                   />
                 ))}
               </div>

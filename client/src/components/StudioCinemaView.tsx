@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, memo } from "react";
 import { 
   Play, 
   Pause, 
@@ -17,9 +17,7 @@ import {
   Heart, 
   MessageCircle, 
   Code, 
-  FileText,
-  ChevronRight,
-  Maximize2
+  FileText
 } from "lucide-react";
 
 interface StudioCinemaViewProps {
@@ -28,7 +26,7 @@ interface StudioCinemaViewProps {
   onSelectItem: (item: any) => void;
 }
 
-export const StudioCinemaView: React.FC<StudioCinemaViewProps> = ({
+export const StudioCinemaView: React.FC<StudioCinemaViewProps> = memo(({
   items,
   selectedItem,
   onSelectItem,
@@ -38,13 +36,16 @@ export const StudioCinemaView: React.FC<StudioCinemaViewProps> = ({
   const [isMuted, setIsMuted] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showJson, setShowJson] = useState(false);
-  const [progress, setProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const progressRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
       videoRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+      if (progressRef.current) {
+        progressRef.current.style.width = "0%";
+      }
     }
   }, [activeItem?.id]);
 
@@ -66,8 +67,16 @@ export const StudioCinemaView: React.FC<StudioCinemaViewProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleTimeUpdate = () => {
+    if (videoRef.current && progressRef.current) {
+      const current = videoRef.current.currentTime;
+      const total = videoRef.current.duration || 1;
+      progressRef.current.style.width = `${(current / total) * 100}%`;
+    }
+  };
+
   return (
-    <div className="bg-obsidian-900 border border-white/[0.08] rounded-3xl p-5 sm:p-7 backdrop-blur-2xl shadow-2xl space-y-6">
+    <div className="bg-obsidian-900 border border-white/[0.08] rounded-3xl p-5 sm:p-7 backdrop-blur-md shadow-2xl space-y-6">
       {/* Top Split View */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left: Master Cinema Video Player (9:16 aspect phone frame) */}
@@ -81,11 +90,7 @@ export const StudioCinemaView: React.FC<StudioCinemaViewProps> = ({
                 playsInline
                 loop
                 muted={isMuted}
-                onTimeUpdate={() => {
-                  if (videoRef.current) {
-                    setProgress((videoRef.current.currentTime / (videoRef.current.duration || 1)) * 100);
-                  }
-                }}
+                onTimeUpdate={handleTimeUpdate}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -103,6 +108,7 @@ export const StudioCinemaView: React.FC<StudioCinemaViewProps> = ({
             <div className="absolute bottom-4 inset-x-4 flex items-center justify-between z-20">
               <div className="flex items-center space-x-2">
                 <button
+                  type="button"
                   onClick={() => {
                     if (videoRef.current) {
                       if (isPlaying) {
@@ -120,6 +126,7 @@ export const StudioCinemaView: React.FC<StudioCinemaViewProps> = ({
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => {
                     const next = !isMuted;
                     setIsMuted(next);
@@ -146,10 +153,10 @@ export const StudioCinemaView: React.FC<StudioCinemaViewProps> = ({
             </div>
 
             {/* Scrubber line */}
-            <div className="absolute bottom-0 inset-x-0 h-1.5 bg-white/20 z-20">
+            <div className="absolute bottom-0 inset-x-0 h-1.5 bg-white/20 z-20 pointer-events-none">
               <div 
-                className="h-full bg-gradient-to-r from-indigo-500 to-rose-500 transition-all duration-100 ease-linear"
-                style={{ width: `${progress}%` }}
+                ref={progressRef}
+                className="h-full bg-gradient-to-r from-indigo-500 to-rose-500 transition-all duration-75 ease-linear w-0"
               />
             </div>
           </div>
@@ -186,8 +193,9 @@ export const StudioCinemaView: React.FC<StudioCinemaViewProps> = ({
 
             <div className="flex items-center space-x-2">
               <button
+                type="button"
                 onClick={handleCopyLink}
-                className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs border border-white/10 flex items-center space-x-1.5 transition"
+                className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs border border-white/10 flex items-center space-x-1.5 transition active:scale-95"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copied ? "Copied" : "Copy URL"}</span>
@@ -196,7 +204,7 @@ export const StudioCinemaView: React.FC<StudioCinemaViewProps> = ({
                 href={activeItem.permalink}
                 target="_blank"
                 rel="noreferrer"
-                className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs border border-white/10 flex items-center space-x-1.5 transition"
+                className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs border border-white/10 flex items-center space-x-1.5 transition active:scale-95"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span>Open Origin</span>
@@ -284,8 +292,9 @@ export const StudioCinemaView: React.FC<StudioCinemaViewProps> = ({
             return (
               <button
                 key={it.id}
+                type="button"
                 onClick={() => onSelectItem(it)}
-                className={`relative flex-shrink-0 w-24 aspect-[9/16] rounded-xl overflow-hidden border-2 transition-all duration-300 ${
+                className={`relative flex-shrink-0 w-24 aspect-[9/16] rounded-xl overflow-hidden border-2 transition-all duration-200 active:scale-95 ${
                   isCurrent
                     ? "border-indigo-500 scale-105 shadow-[0_0_20px_rgba(99,102,241,0.5)]"
                     : "border-white/10 opacity-70 hover:opacity-100 hover:border-white/30"
@@ -295,6 +304,7 @@ export const StudioCinemaView: React.FC<StudioCinemaViewProps> = ({
                   src={it.thumbnailUrl}
                   alt={it.advertiserName}
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
                 <span className="absolute bottom-1.5 inset-x-1 text-[9px] font-mono text-white truncate text-center">
@@ -307,4 +317,4 @@ export const StudioCinemaView: React.FC<StudioCinemaViewProps> = ({
       </div>
     </div>
   );
-};
+});
